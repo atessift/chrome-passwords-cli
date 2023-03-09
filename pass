@@ -29,10 +29,11 @@ CHROME_USERNAME = 'Chrome'
 
 
 def get_master_password():
-  master = keyring.get_password(__name__, getpass.getuser())
+  app_name = os.path.splitext(os.path.basename(__file__))[0]
+  master = keyring.get_password(app_name, getpass.getuser())
   if master is None:
-    master = keyring.get_password(CHROME_SERVICE, CHROME_USERNAME)
-    keyring.set_password(__name__, getpass.getuser(), master)
+    master = str(keyring.get_password(CHROME_SERVICE, CHROME_USERNAME))
+    keyring.set_password(app_name, getpass.getuser(), master)
   return master.encode('utf8')
 
 
