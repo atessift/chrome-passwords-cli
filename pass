@@ -78,11 +78,13 @@ def main(query, profile):
       yield '{:>50} {:<40}   {:0>3d} '.format(title, account, pass_id)
 
   @percol.action.action()
-  def copy(lines, percol):
+  def copy(lines, _):
     pyperclip.copy(decrypt(password2id[int(lines[0].split()[-1])]))
 
   with percol.Percol(actions=[copy], candidates=candidates(), query=query) as p:
     percol.cli.load_rc(p)
+    p.view.PROMPT  = "<bold><yellow>Search</yellow></bold> %q" # type: ignore
+    p.view.CANDIDATES_LINE_SELECTED = ("underline", "on_blue", "black") # type: ignore
     exit_code = p.loop()
   exit(exit_code)
 
