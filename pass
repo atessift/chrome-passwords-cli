@@ -6,10 +6,7 @@ import codecs
 import os
 import sqlite3
 import tempfile
-try:
-  from urlparse import urlparse
-except ImportError:
-  from urllib.parse import urlparse
+from urllib.parse import urlparse
 import percol
 import percol.cli
 import percol.action
