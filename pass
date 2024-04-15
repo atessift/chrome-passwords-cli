@@ -46,7 +46,7 @@ def decrypt(password):
   return ''.join([chr(i) for i in binary if i >= 32])
 
 
-def main(query, profile):
+def main(query, profile, out):
   passwords = []
   password2id = []
 
@@ -81,17 +81,32 @@ def main(query, profile):
   def copy(lines, _):
     pyperclip.copy(decrypt(password2id[int(lines[0].split()[-1])]))
 
-  with percol.Percol(actions=[copy], candidates=candidates(), query=query) as p:
-    percol.cli.load_rc(p)
-    p.view.PROMPT  = "<bold><yellow>Search</yellow></bold> %q" # type: ignore
-    p.view.CANDIDATES_LINE_SELECTED = ("underline", "on_blue", "black") # type: ignore
-    exit_code = p.loop()
-  exit(exit_code)
+  @percol.action.action()
+  def to_stdout(lines, _):
+    print(decrypt(password2id[int(lines[0].split()[-1])]), end='')
+
+  if out:
+    with percol.Percol(actions=[to_stdout], candidates=candidates(), query=query) as p:
+      percol.cli.load_rc(p)
+      p.model.do_search(p.model.query)
+      if len(p.model_candidate.get_selected_results_with_index()) == 1:
+        exit_code = p.finish_with_exit_code()
+      else:
+        exit_code = 1
+    exit(exit_code)
+  else:
+    with percol.Percol(actions=[copy], candidates=candidates(), query=query) as p:
+      percol.cli.load_rc(p)
+      p.view.PROMPT  = "<bold><yellow>Search</yellow></bold> %q" # type: ignore
+      p.view.CANDIDATES_LINE_SELECTED = ("underline", "on_blue", "black") # type: ignore
+      exit_code = p.loop()
+    exit(exit_code)
 
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument('query', default='', nargs='?')
   parser.add_argument('--profile', default=PROFILE)
+  parser.add_argument('--out', default=False, action='store_true', help='None-interactive; Output password to stdout')
   args = parser.parse_args()
-  main(args.query, args.profile)
+  main(args.query, args.profile, args.out)
