@@ -7,6 +7,7 @@ import os
 import sqlite3
 import tempfile
 from urllib.parse import urlparse
+import io
 import percol
 import percol.cli
 import percol.action
@@ -81,20 +82,20 @@ def main(query, profile, out):
   def copy(lines, _):
     pyperclip.copy(decrypt(password2id[int(lines[0].split()[-1])]))
 
-  @percol.action.action()
-  def to_stdout(lines, _):
-    print(decrypt(password2id[int(lines[0].split()[-1])]), end='')
-
   if out:
-    with percol.Percol(actions=[to_stdout], candidates=candidates(), query=query) as p:
-      percol.cli.load_rc(p)
-      p.model.do_search(p.model.query)
-      if len(p.model_candidate.get_selected_results_with_index()) == 1:
-        exit_code = p.finish_with_exit_code()
-      else:
-        exit_code = 1
+    # None-interactive, E.g. with --out
+    descriptors = {'stdin': io.StringIO(), 'stdout': io.StringIO(), 'stderr': io.StringIO()}
+    p = percol.Percol(actions=[], candidates=candidates(), query=query, descriptors=descriptors)
+    p.model.do_search(p.model.query)
+    results = p.model_candidate.get_selected_results_with_index()
+    if len(results) == 1:
+      print(decrypt(password2id[int(results[0][0].split()[-1])]), end='')
+      exit_code = 0
+    else:
+      exit_code = 1
     exit(exit_code)
   else:
+    # Interactive
     with percol.Percol(actions=[copy], candidates=candidates(), query=query) as p:
       percol.cli.load_rc(p)
       p.view.PROMPT  = "<bold><yellow>Search</yellow></bold> %q" # type: ignore
